@@ -279,7 +279,6 @@ function App() {
           team={team}
           currentUserId={session.user.id}
           logoUrl={logoUrl}
-          onTeamUpdated={refreshTeams}
           onLogoChanged={refreshLogo}
         />
       )}
