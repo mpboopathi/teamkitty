@@ -6,6 +6,7 @@ import { CompleteProfileScreen } from './features/auth/CompleteProfileScreen'
 import { useMyTeams } from './features/teams/useMyTeams'
 import { JoinOrCreateTeamScreen } from './features/teams/JoinOrCreateTeamScreen'
 import { TeamRoster } from './features/teams/TeamRoster'
+import { teamLogoUrl } from './features/teams/teamLogo'
 import { useTeamRoster } from './features/teams/useTeamRoster'
 import { useSeasons } from './features/seasons/useSeasons'
 import { CreateSeasonScreen } from './features/seasons/CreateSeasonScreen'
@@ -96,7 +97,13 @@ function App() {
     <main className="page-shell">
       <header className="app-header">
         <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <img src="/favicon.svg" alt="" width="30" height="30" style={{ borderRadius: '8px' }} />
+          <img
+            src={teamLogoUrl(team) ?? '/favicon.svg'}
+            alt=""
+            width="30"
+            height="30"
+            style={{ borderRadius: '8px', objectFit: 'cover' }}
+          />
           {team.name}
         </h1>
         <div className="whoami">
@@ -225,7 +232,7 @@ function App() {
           )}
 
           {!showNewSeasonForm && !showEditSeasonForm && activeSeason && tab === 'overview' && (
-            <SeasonSummary season={activeSeason} refreshKey={entries.length} />
+            <SeasonSummary season={activeSeason} refreshKey={entries.length} currentUserId={session.user.id} />
           )}
 
           {!showNewSeasonForm && !showEditSeasonForm && activeSeason && tab === 'ledger' && (
@@ -244,7 +251,12 @@ function App() {
               {isOfficer && (
                 <>
                   <h2 className="section-title">Awaiting your approval</h2>
-                  <PendingApprovals entries={entries} currentUserId={session.user.id} onChanged={refreshEntries} />
+                  <PendingApprovals
+                    entries={entries}
+                    currentUserId={session.user.id}
+                    officers={officers}
+                    onChanged={refreshEntries}
+                  />
                 </>
               )}
 
@@ -261,7 +273,7 @@ function App() {
 
       {tab === 'practice' && <PracticePanel teamId={team.id} roster={members} currentUserId={session.user.id} />}
 
-      {tab === 'roster' && <TeamRoster team={team} currentUserId={session.user.id} />}
+      {tab === 'roster' && <TeamRoster team={team} currentUserId={session.user.id} onTeamUpdated={refreshTeams} />}
 
       {tab === 'help' && <HelpScreen />}
     </main>

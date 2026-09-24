@@ -45,8 +45,10 @@ export function CompleteProfileScreen({ session, onDone }: Props) {
     <div className="center-shell">
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '2.2rem' }}>👋</div>
-        <h1 style={{ textAlign: 'center' }}>Welcome!</h1>
-        <p className="hint" style={{ textAlign: 'center' }}>What name should your teammates see?</p>
+        <h1 style={{ textAlign: 'center' }}>One last step</h1>
+        <p className="hint" style={{ textAlign: 'center' }}>
+          Your account's set up. Just tell us what name your teammates should see you as.
+        </p>
         <form onSubmit={handleSubmit} className="form-stack">
           <input required placeholder="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
           <button type="submit" disabled={saving} className="btn btn-primary">

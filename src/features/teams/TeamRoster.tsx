@@ -4,19 +4,45 @@ import { supabase } from '../../lib/supabaseClient'
 import { useTeamRoster } from './useTeamRoster'
 import { OFFICER_ROLE_KEYS, OFFICER_ROLE_LABELS, rosterMemberName } from './types'
 import type { Team } from './types'
+import { teamLogoUrl, uploadTeamLogo } from './teamLogo'
 
 interface Props {
   team: Team
   currentUserId: string
+  onTeamUpdated: () => void
 }
 
-export function TeamRoster({ team, currentUserId }: Props) {
+export function TeamRoster({ team, currentUserId, onTeamUpdated }: Props) {
   const { members, officers, loading, refresh } = useTeamRoster(team.id)
 
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoError, setLogoError] = useState('')
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('Please pick an image under 2MB.')
+      return
+    }
+
+    setUploadingLogo(true)
+    setLogoError('')
+    try {
+      await uploadTeamLogo(team.id, file)
+      onTeamUpdated()
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : 'Failed to upload logo')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
 
   const isCurrentUserOfficer = officers.some((o) => o.user_id === currentUserId)
   const activeMembers = members.filter((m) => m.status !== 'inactive')
@@ -83,6 +109,33 @@ export function TeamRoster({ team, currentUserId }: Props) {
             Share this with new players — they'll enter it after signing in to join the team instantly, no need to add
             them here first.
           </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginTop: '0.9rem' }}>
+            <img
+              src={teamLogoUrl(team) ?? '/favicon.svg'}
+              alt=""
+              width="48"
+              height="48"
+              style={{ borderRadius: '10px', objectFit: 'cover', border: '1px solid var(--border)' }}
+            />
+            <div>
+              <label className="btn btn-outline btn-sm" style={{ display: 'inline-block', cursor: 'pointer' }}>
+                {uploadingLogo ? 'Uploading…' : '🖼️ Change team logo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  disabled={uploadingLogo}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              <p className="hint" style={{ margin: '0.3rem 0 0' }}>
+                Shown in the app header for everyone on this team. Doesn't change the app's icon on your phone's home
+                screen — that's shared across all teams.
+              </p>
+              {logoError && <p className="error-text">{logoError}</p>}
+            </div>
+          </div>
         </div>
       )}
 

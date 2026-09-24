@@ -14,9 +14,10 @@ interface PlayerSummaryRow {
 interface Props {
   season: Season
   refreshKey: number
+  currentUserId: string
 }
 
-export function SeasonSummary({ season, refreshKey }: Props) {
+export function SeasonSummary({ season, refreshKey, currentUserId }: Props) {
   const [balance, setBalance] = useState<number | null>(null)
   const [rows, setRows] = useState<PlayerSummaryRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,8 +48,27 @@ export function SeasonSummary({ season, refreshKey }: Props) {
   const totalRegistered = rows.reduce((sum, r) => sum + r.registration_paid, 0)
   const totalReturned = rows.reduce((sum, r) => sum + r.returned_so_far, 0)
 
+  const myRow = rows.find((r) => r.player_id === currentUserId)
+  // Positive: team still owes this back to you. Negative: you owe the team.
+  const myNet = myRow ? myRow.suggested_return - myRow.returned_so_far : null
+
   return (
     <div>
+      {myRow && myNet !== null && Math.abs(myNet) >= 0.01 && (
+        <div
+          className="card-tinted"
+          style={
+            myNet > 0
+              ? { background: 'var(--success-bg)', border: '1px solid #86efac', color: 'var(--success)' }
+              : { background: 'var(--danger-bg)', border: '1px solid #fca5a5', color: 'var(--danger)' }
+          }
+        >
+          {myNet > 0
+            ? `💸 The team owes you $${myNet.toFixed(2)} (pending fee return).`
+            : `⚠️ You owe the team $${Math.abs(myNet).toFixed(2)}.`}
+        </div>
+      )}
+
       <div className="stat-row">
         <div className="stat-tile" style={{ background: 'linear-gradient(135deg, #ede9fe, #ffffff)' }}>
           <div className="stat-label">💰 Current balance</div>
