@@ -120,7 +120,10 @@ jobs:
           fi
           xcodebuild $XC_TARGET -scheme App -configuration Release \
             -archivePath $RUNNER_TEMP/App.xcarchive archive \
-            CODE_SIGN_STYLE=Manual
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM=BA4BGFF9B9 \
+            PROVISIONING_PROFILE_SPECIFIER="TeamKitty App Store"
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/App.xcarchive \
             -exportOptionsPlist ExportOptions.plist \
