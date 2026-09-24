@@ -82,9 +82,9 @@ jobs:
       - name: Sync Capacitor iOS project
         run: npx cap sync ios
 
-      - name: Install CocoaPods dependencies
+      - name: Install CocoaPods dependencies (if needed)
         working-directory: ios/App
-        run: pod install
+        run: test -f Podfile && pod install || echo "No Podfile -- using Swift Package Manager, skipping"
 
       - name: Decrypt distribution certificate
         run: |
