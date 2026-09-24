@@ -4,15 +4,16 @@ import { supabase } from '../../lib/supabaseClient'
 import { useTeamRoster } from './useTeamRoster'
 import { OFFICER_ROLE_KEYS, OFFICER_ROLE_LABELS, rosterMemberName } from './types'
 import type { Team } from './types'
-import { teamLogoUrl, uploadTeamLogo } from './teamLogo'
+import { uploadTeamLogo } from './teamLogo'
 
 interface Props {
   team: Team
   currentUserId: string
-  onTeamUpdated: () => void
+  logoUrl: string | null
+  onLogoChanged: () => void
 }
 
-export function TeamRoster({ team, currentUserId, onTeamUpdated }: Props) {
+export function TeamRoster({ team, currentUserId, logoUrl, onLogoChanged }: Props) {
   const { members, officers, loading, refresh } = useTeamRoster(team.id)
 
   const [email, setEmail] = useState('')
@@ -36,7 +37,7 @@ export function TeamRoster({ team, currentUserId, onTeamUpdated }: Props) {
     setLogoError('')
     try {
       await uploadTeamLogo(team.id, file)
-      onTeamUpdated()
+      onLogoChanged()
     } catch (err) {
       setLogoError(err instanceof Error ? err.message : 'Failed to upload logo')
     } finally {
@@ -112,7 +113,7 @@ export function TeamRoster({ team, currentUserId, onTeamUpdated }: Props) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginTop: '0.9rem' }}>
             <img
-              src={teamLogoUrl(team) ?? '/favicon.svg'}
+              src={logoUrl ?? '/favicon.svg'}
               alt=""
               width="48"
               height="48"

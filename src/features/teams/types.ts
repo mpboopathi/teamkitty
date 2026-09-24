@@ -5,7 +5,6 @@ export interface Team {
   city: string | null
   default_practice_hourly_rate: number
   join_code: string
-  logo_path: string | null
   created_by: string
   created_at: string
 }

@@ -6,7 +6,7 @@ import { CompleteProfileScreen } from './features/auth/CompleteProfileScreen'
 import { useMyTeams } from './features/teams/useMyTeams'
 import { JoinOrCreateTeamScreen } from './features/teams/JoinOrCreateTeamScreen'
 import { TeamRoster } from './features/teams/TeamRoster'
-import { teamLogoUrl } from './features/teams/teamLogo'
+import { useTeamLogo } from './features/teams/useTeamLogo'
 import { useTeamRoster } from './features/teams/useTeamRoster'
 import { useSeasons } from './features/seasons/useSeasons'
 import { CreateSeasonScreen } from './features/seasons/CreateSeasonScreen'
@@ -49,6 +49,7 @@ function App() {
 
   const team = teams[0] ?? null
   const { members, officers } = useTeamRoster(team?.id ?? null)
+  const { logoUrl, refresh: refreshLogo } = useTeamLogo(team?.id ?? null)
   const { seasons, loading: seasonsLoading, refresh: refreshSeasons } = useSeasons(team?.id ?? null)
   const activeSeasonId = selectedSeasonId ?? seasons[0]?.id ?? null
   const activeSeason = seasons.find((s) => s.id === activeSeasonId) ?? null
@@ -98,7 +99,7 @@ function App() {
       <header className="app-header">
         <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <img
-            src={teamLogoUrl(team) ?? '/favicon.svg'}
+            src={logoUrl ?? '/favicon.svg'}
             alt=""
             width="30"
             height="30"
@@ -273,7 +274,15 @@ function App() {
 
       {tab === 'practice' && <PracticePanel teamId={team.id} roster={members} currentUserId={session.user.id} />}
 
-      {tab === 'roster' && <TeamRoster team={team} currentUserId={session.user.id} onTeamUpdated={refreshTeams} />}
+      {tab === 'roster' && (
+        <TeamRoster
+          team={team}
+          currentUserId={session.user.id}
+          logoUrl={logoUrl}
+          onTeamUpdated={refreshTeams}
+          onLogoChanged={refreshLogo}
+        />
+      )}
 
       {tab === 'help' && <HelpScreen />}
     </main>

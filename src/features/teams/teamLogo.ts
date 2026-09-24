@@ -1,26 +1,37 @@
 import { supabase } from '../../lib/supabaseClient'
-import type { Team } from './types'
 
-// Public bucket, so this is just a plain URL -- no signed-URL dance needed
-// (unlike receipts, which are private).
-export function teamLogoUrl(team: Pick<Team, 'logo_path'>): string | null {
-  if (!team.logo_path) return null
-  return supabase.storage.from('team-logos').getPublicUrl(team.logo_path).data.publicUrl
+// Team logos live in public.team_logos (base64 in a plain Postgres table),
+// not Supabase Storage -- see git history for why. Access goes through
+// SECURITY DEFINER RPCs, same as every other write/read in this app.
+
+export async function fetchTeamLogoDataUrl(teamId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_team_logo', { p_team_id: teamId })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) return null
+  return `data:${row.content_type};base64,${row.image_base64}`
 }
 
-export async function uploadTeamLogo(teamId: string, file: File): Promise<Team> {
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-  const path = `${teamId}/logo.${ext}`
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // result is "data:<mime>;base64,<data>" -- strip the prefix.
+      const commaIndex = result.indexOf(',')
+      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result)
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
+}
 
-  const { error: uploadError } = await supabase.storage
-    .from('team-logos')
-    .upload(path, file, { upsert: true, cacheControl: '3600' })
-  if (uploadError) throw uploadError
-
-  const { data, error } = await supabase.rpc('update_team_logo', {
+export async function uploadTeamLogo(teamId: string, file: File): Promise<void> {
+  const base64 = await fileToBase64(file)
+  const { error } = await supabase.rpc('upload_team_logo', {
     p_team_id: teamId,
-    p_logo_path: path,
+    p_content_type: file.type || 'image/png',
+    p_image_base64: base64,
   })
   if (error) throw error
-  return data as Team
 }
