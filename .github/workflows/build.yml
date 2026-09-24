@@ -123,7 +123,8 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=BA4BGFF9B9 \
-            PROVISIONING_PROFILE_SPECIFIER="TeamKitty App Store"
+            PROVISIONING_PROFILE_SPECIFIER="TeamKitty App Store" \
+            CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/App.xcarchive \
             -exportOptionsPlist ExportOptions.plist \
