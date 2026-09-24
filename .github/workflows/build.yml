@@ -1,0 +1,150 @@
+name: Build TeamKitty apps
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write .env from secrets
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Build web bundle
+        run: npm run build
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Decrypt release keystore
+        run: |
+          openssl enc -aes-256-cbc -d -pbkdf2 \
+            -in android/app/keystore.enc \
+            -out android/app/teamkitty-keystore.jks \
+            -pass pass:"${{ secrets.ANDROID_KEYSTORE_ENC_PASSWORD }}"
+
+      - name: Build signed AAB
+        working-directory: android
+        env:
+          TEAMKITTY_KEYSTORE_PATH: teamkitty-keystore.jks
+          TEAMKITTY_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          TEAMKITTY_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          TEAMKITTY_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+
+      - name: Clean up decrypted keystore
+        if: always()
+        run: rm -f android/app/teamkitty-keystore.jks
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-bundle
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write .env from secrets
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Build web bundle
+        run: npm run build
+
+      - name: Sync Capacitor iOS project
+        run: npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios/App
+        run: pod install
+
+      - name: Decrypt distribution certificate
+        run: |
+          openssl enc -aes-256-cbc -d -pbkdf2 \
+            -in ios/distribution.enc \
+            -out ios/distribution.p12 \
+            -pass pass:"${{ secrets.IOS_DISTRIBUTION_CERT_ENC_PASSWORD }}"
+
+      - name: Import certificate and provisioning profile
+        env:
+          IOS_DISTRIBUTION_CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_ENC_PASSWORD }}
+        run: |
+          KEYCHAIN=build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN
+          security set-keychain-settings -lut 21600 $KEYCHAIN
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN
+          security import ios/distribution.p12 -k $KEYCHAIN -P "$IOS_DISTRIBUTION_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN
+          security list-keychains -d user -s $KEYCHAIN $(security list-keychains -d user | sed s/\"//g)
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/teamkitty.mobileprovision"
+
+      - name: Archive and export IPA
+        working-directory: ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -archivePath $RUNNER_TEMP/App.xcarchive archive \
+            CODE_SIGN_STYLE=Manual
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath $RUNNER_TEMP/export
+
+      - name: Clean up decrypted certificate
+        if: always()
+        run: rm -f ios/distribution.p12
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+
+# --------------------------------------------------------------------------
+# GitHub Secrets this workflow needs (Repo Settings -> Secrets and variables
+# -> Actions). Values marked [generated] are already sitting in the
+# teamkitty-android-signing-secrets.txt file delivered alongside this repo
+# -- paste them in as-is. Values marked [you create] need to come from the
+# Apple Developer portal / App Store Connect first (see the ios/App/README
+# this workflow assumes, or ask for the exact click-path).
+#
+#   SUPABASE_URL                       [already known -- your Supabase project URL]
+#   SUPABASE_ANON_KEY                  [already known -- your Supabase publishable key]
+#   ANDROID_KEYSTORE_ENC_PASSWORD      [generated]
+#   ANDROID_KEYSTORE_PASSWORD          [generated]
+#   ANDROID_KEY_ALIAS                  [generated -- "teamkitty"]
+#   ANDROID_KEY_PASSWORD               [generated -- same value as ANDROID_KEYSTORE_PASSWORD]
+#   IOS_DISTRIBUTION_CERT_ENC_PASSWORD [you create -- pick any passphrase when you encrypt ios/distribution.p12 into ios/distribution.enc]
+#   IOS_DISTRIBUTION_CERT_PASSWORD     [you create -- the .p12 export password from Keychain Access]
+#   IOS_PROVISIONING_PROFILE           [you create -- base64 of the .mobileprovision file: base64 -i profile.mobileprovision | pbcopy]
+# --------------------------------------------------------------------------

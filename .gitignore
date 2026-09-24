@@ -1,0 +1,31 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.local
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# OS
+.DS_Store
+
+# Native app signing secrets -- NEVER commit these, only the .enc versions
+*.jks
+*.keystore
+ios/distribution.p12
+ios/*.mobileprovision
+android/app/teamkitty-keystore.jks
+teamkitty-android-signing-secrets.txt
+
+# Capacitor / native build output
+android/app/build
+android/build
+android/.gradle
+android/local.properties
+ios/App/Pods
+ios/App/build
+ios/App/App/public
