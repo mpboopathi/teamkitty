@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './features/auth/useAuth'
+import { AccountActions } from './features/auth/AccountActions'
 import { useProfile } from './features/auth/useProfile'
 import { LoginScreen } from './features/auth/LoginScreen'
 import { CompleteProfileScreen } from './features/auth/CompleteProfileScreen'
@@ -88,9 +89,9 @@ function App() {
     return <LoginScreen onBack={() => setShowAuth(false)} />
   }
   if (profileLoading) return <p className="center-shell muted">Loading your profile…</p>
-  if (!profile) return <CompleteProfileScreen session={session} onDone={refreshProfile} />
+  if (!profile) return <CompleteProfileScreen session={session} onDone={refreshProfile} onSignedOut={() => setShowAuth(false)} />
   if (teamsLoading) return <p className="center-shell muted">Loading your teams…</p>
-  if (!team) return <JoinOrCreateTeamScreen onJoined={refreshTeams} onCreated={refreshTeams} />
+  if (!team) return <JoinOrCreateTeamScreen onJoined={refreshTeams} onCreated={refreshTeams} onSignedOut={() => setShowAuth(false)} />
 
   const isOfficer = officers.some((o) => o.user_id === session.user.id)
 
@@ -138,15 +139,7 @@ function App() {
               </button>{' '}
             </>
           )}
-          <button
-            className="btn btn-outline btn-sm"
-            onClick={() => {
-              supabase.auth.signOut()
-              setShowAuth(false)
-            }}
-          >
-            Sign out
-          </button>
+          <AccountActions onSignedOut={() => setShowAuth(false)} />
         </div>
       </header>
 

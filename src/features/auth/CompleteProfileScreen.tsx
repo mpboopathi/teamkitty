@@ -2,13 +2,15 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabaseClient'
+import { AccountActions } from './AccountActions'
 
 interface Props {
   session: Session
   onDone: () => void
+  onSignedOut: () => void
 }
 
-export function CompleteProfileScreen({ session, onDone }: Props) {
+export function CompleteProfileScreen({ session, onDone, onSignedOut }: Props) {
   const [fullName, setFullName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -56,6 +58,10 @@ export function CompleteProfileScreen({ session, onDone }: Props) {
           </button>
           {error && <p className="error-text">{error}</p>}
         </form>
+      </div>
+
+      <div style={{ marginTop: '1.25rem' }}>
+        <AccountActions onSignedOut={onSignedOut} />
       </div>
     </div>
   )

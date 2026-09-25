@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { AccountActions } from '../auth/AccountActions'
 import { CreateTeamScreen } from './CreateTeamScreen'
 
 interface Props {
   onJoined: () => void
   onCreated: () => void
+  onSignedOut: () => void
 }
 
-export function JoinOrCreateTeamScreen({ onJoined, onCreated }: Props) {
+export function JoinOrCreateTeamScreen({ onJoined, onCreated, onSignedOut }: Props) {
   const [mode, setMode] = useState<'join' | 'create'>('join')
   const [code, setCode] = useState('')
   const [joining, setJoining] = useState(false)
@@ -66,6 +68,10 @@ export function JoinOrCreateTeamScreen({ onJoined, onCreated }: Props) {
         ) : (
           <CreateTeamScreen onCreated={onCreated} />
         )}
+      </div>
+
+      <div style={{ marginTop: '1.25rem' }}>
+        <AccountActions onSignedOut={onSignedOut} />
       </div>
     </div>
   )
