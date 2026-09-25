@@ -110,7 +110,7 @@ function App() {
         </h1>
         <div className="whoami">
           {editingName ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div className="whoami-row">
               <input
                 autoFocus
                 value={nameDraft}
@@ -124,22 +124,26 @@ function App() {
               <button className="btn btn-outline btn-sm" onClick={() => setEditingName(false)}>
                 Cancel
               </button>
-            </span>
+            </div>
           ) : (
             <>
-              {profile.full_name} ({profile.email}){' '}
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={() => {
-                  setNameDraft(profile.full_name)
-                  setEditingName(true)
-                }}
-              >
-                ✏️ Edit name
-              </button>{' '}
+              <p className="whoami-identity">
+                {profile.full_name} ({profile.email})
+              </p>
+              <div className="whoami-row">
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    setNameDraft(profile.full_name)
+                    setEditingName(true)
+                  }}
+                >
+                  ✏️ Edit name
+                </button>
+                <AccountActions onSignedOut={() => setShowAuth(false)} />
+              </div>
             </>
           )}
-          <AccountActions onSignedOut={() => setShowAuth(false)} />
         </div>
       </header>
 

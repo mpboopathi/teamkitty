@@ -35,7 +35,7 @@ export function AccountActions({ onSignedOut }: Props) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+    <>
       <button
         className="btn btn-outline btn-sm"
         onClick={() => {
@@ -48,6 +48,6 @@ export function AccountActions({ onSignedOut }: Props) {
       <button className="btn btn-outline btn-sm" disabled={deleting} onClick={handleDeleteAccount}>
         {deleting ? 'Deleting…' : '🗑️ Delete account'}
       </button>
-    </div>
+    </>
   )
 }

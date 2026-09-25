@@ -60,7 +60,7 @@ export function CompleteProfileScreen({ session, onDone, onSignedOut }: Props) {
         </form>
       </div>
 
-      <div style={{ marginTop: '1.25rem' }}>
+      <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
         <AccountActions onSignedOut={onSignedOut} />
       </div>
     </div>
