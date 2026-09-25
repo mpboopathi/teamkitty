@@ -230,19 +230,26 @@ textarea {
   font-family: inherit;
 }
 
+/* Text-like inputs get the boxed field styling and, critically, a 16px
+   font-size. This selector deliberately covers plain <input> elements
+   with NO type attribute at all (most of this app's fields, e.g. season
+   name, ledger note/payee, full name) -- an attribute selector like
+   input[type='text'] only matches when type="text" is written in the
+   markup, so it silently misses every untyped input and left them on the
+   browser's default sub-16px control font. That's what was triggering
+   iOS's auto-zoom-on-focus, which then stayed zoomed in after the field
+   blurred -- the "screen resizing" bug. Checkbox/radio/range/file inputs
+   are excluded since they're not text fields and shouldn't get this
+   boxed look. */
 .input,
-input[type='text'],
-input[type='email'],
-input[type='password'],
-input[type='number'],
-input[type='date'],
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
 select {
   padding: 0.6rem 0.7rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
